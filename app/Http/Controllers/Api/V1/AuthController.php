@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    /**
-     * Login user and create token
-     */
+
     public function login(LoginRequest $request)
     {
         $credentials = $request->only('login', 'password');
@@ -38,9 +36,6 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Register new user
-     */
     public function register(Request $request)
     {
 
@@ -59,9 +54,6 @@ class AuthController extends Controller
 
     }
 
-    /**
-     * Get authenticated user
-     */
     public function user(Request $request)
     {
         $user = User::paginate(15);
@@ -75,17 +67,13 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout user (Revoke the token)
-     */
-    public function logout(Request $request)
+    public function logout()
     {
-        $user = $request->user()->token();
-        $user->revoke();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User logged out successfully'
-        ]);
+        Auth::user()->logout();
+        return [
+            'data' => [
+                'message' => 'logout'
+            ]
+        ];
     }
 }

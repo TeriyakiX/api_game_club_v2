@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class TournamentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         $tournament = Tournament::paginate(5);
@@ -26,9 +24,7 @@ class TournamentController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(TournamentStoreRequest $request)
     {
         $created_tournament = Tournament::create($request->validate([
@@ -40,25 +36,18 @@ class TournamentController extends Controller
 
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(string $id)
     {
         return new TournamentResource(Tournament::find($id));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, string $id)
     {
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         //
