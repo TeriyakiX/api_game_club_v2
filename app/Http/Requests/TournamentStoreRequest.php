@@ -23,7 +23,8 @@ class TournamentStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|max:255',
-            'description' => 'required|max:255'
+            'description' => 'required|max:255',
+            'date' => 'required|max:255'
         ];
     }
 }

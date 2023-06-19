@@ -33,10 +33,11 @@ class TournamentController extends Controller
     {
         $created_tournament = Tournament::create($request->validate([
             'name' => 'required|max:255',
-            'prize' => 'required|max:255'
+            'prize' => 'required|max:255',
+            'date' => 'required|max:255'
         ]));
-
         return new TournamentResource($created_tournament);
+
     }
 
     /**

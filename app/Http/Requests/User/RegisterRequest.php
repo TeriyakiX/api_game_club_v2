@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class NewsStoreRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -22,9 +22,13 @@ class NewsStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|max:255',
-            'description' => 'required|max:255'
-
+            'name' => 'required|string',
+            'surname' => 'string',
+            'patronymic' => 'string',
+            'login' => 'required|string|unique:users',
+            'password' => 'required|string',
+            'photo_file' => 'image|mimes:jpg,jpeg,png',
+            'role_id' => 'required|integer|exists:users,id',
         ];
     }
 }
