@@ -13,8 +13,20 @@ class Tournament extends Model
 
     protected  $fillable =[
         'id',
-        'name',
+        'game',
+        'Short_description',
+        'description',
+        'date_start',
+        'date_end',
         'prize',
-        'date',
+        'type_id',
+        'status_id',
+        'updated_at',
+        'created_at',
+
     ];
+    public function applications()
+    {
+        return $this->hasMany(Applications_the_tournament::class);
+    }
 }

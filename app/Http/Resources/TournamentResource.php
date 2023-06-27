@@ -7,18 +7,18 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class TournamentResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'game' => $this->game,
+            'Short_description' => $this->Short_description,
+            'description' => $this->description,
+            'date_start' => $this->date_start,
+            'date_end' => $this->date_end,
             'prize' => $this->prize,
-            'date' => $this->date,
+            'type_id' => $this->type_id,
+            'status_id' => $this->status_id,
         ];
     }
 }
