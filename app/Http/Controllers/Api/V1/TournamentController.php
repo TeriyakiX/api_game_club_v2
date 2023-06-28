@@ -9,27 +9,55 @@ use App\Models\Applications_the_tournament;
 use App\Models\Tournament;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class TournamentController extends Controller
 {
 
     public function index()
     {
-        $tournament = Tournament::paginate(5);
+        $tournament = Tournament::paginate(15);
+
+        if ($tournament->count() === 0) {
+            return response()->json(['message' => 'Турниры не найдены'], 404);
+        }
 
         TournamentResource::collection($tournament);
 
         return response()->json([
-            'data' => $tournament ->all(),
-            'currentPage' => $tournament -> currentPage(),
-            'lastPage' => $tournament -> lastPage(),
+            'data' => $tournament->all(),
+            'currentPage' => $tournament->currentPage(),
+            'lastPage' => $tournament->lastPage(),
         ]);
+    }
+    public function viewApplications($id) {
+
+        if (auth()->check() && !auth()->user()) {
+            return response()->json([
+                'message' => 'У вас нет прав на просмотр заявок турнира'
+            ], 403);
+        }
+        $tournament = \App\Models\Tournament::findOrFail($id);
+        if (!$tournament) {
+            return response()->json(['message' => 'турнир с данным ID не действителен'], 404);
+        }else
+            $applications = $tournament->applications()->get();
+            return response()->json($applications);
     }
 
 
-    public function store(TournamentStoreRequest $request)
+
+    public function store(Request $request)
     {
-        $created_tournament = Tournament::create($request->validate([
+        // Проверяем права доступа на создание турниров
+        if (auth()->check() && !auth()->user()->can('create-tournament')) {
+            return response()->json([
+                'message' => 'У вас нет прав на создание турниров'
+            ], 403);
+        }
+
+        // Валидация входных данных и создание турнира
+        $validator = Validator($request->all(), [
             'game' => 'required|max:255',
             'Short_description' => 'required|max:255',
             'description' => 'required|max:255',
@@ -38,44 +66,77 @@ class TournamentController extends Controller
             'prize' => 'required|max:255',
             'type_id' => 'required|max:255',
             'status_id' => 'required|max:255'
-        ]));
-        return new TournamentResource($created_tournament);
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Ошибка валидации',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $created_tournament = Tournament::create($validator->validated());
+
+        return response()->json([
+            'message' => 'Турнир успешно создан',
+            'data' => $created_tournament
+        ], 201);
     }
 
     public function createApplication(Request $request, $id)
     {
-        // Получение данных из формы
+        if (!auth()->user()->can('update-tournament')) {
+            return response()->json([
+                'message' => 'У вас нет прав на создание заявки'
+            ], 403);
+        }
+
         $name = $request->input('name');
         $email = $request->input('email');
         $phone = $request->input('phone');
 
-        // Получение идентификатора текущего пользователя
-        $user_id = Auth::id();
+        $tournament = Tournament::findOrFail($id);
 
-        // Создание записи участия в турнире
-        $application = new Applications_the_tournament();
-        $application->id_tournament = $id;
+        if (!$tournament) {
+            return response()->json(['message' => 'Турнир не действителен'],404);
+        }
+
+        $application = new \App\Models\Applications_the_tournament();
+        $application->tournament_id = $id;
+        $application->user_id = auth()->id();
         $application->name = $name;
         $application->email = $email;
         $application->phone = $phone;
-        $application->id_user = $user_id; // Связывание заявки с пользователем
-        $application->save();
 
-        // Другой код
+        $tournament->applications()->save($application);
 
         return redirect()->back()->with('status', 'Заявка на участие в турнире была успешно создана!');
     }
 
 
+
     public function show(string $id)
     {
+        $tournament = Tournament::find($id);
+
+        if (!$tournament) {
+            return response()->json(['message' => 'Турнира с заданным id не существует'], 404);
+        }
+
         return new TournamentResource(Tournament::find($id));
+
     }
 
 
     public function update(TournamentStoreRequest $request, Tournament $tournament)
+
     {
+        if (auth()->check() && !auth()->user()->can('create-tournament')) {
+            return response()->json([
+                'message' => 'У вас нет прав на создание турниров'
+            ], 403);
+        }
+
         $tournament->update($request->validate([
             'game' => 'required|max:255',
             'Short_description' => 'required|max:255',
@@ -87,18 +148,49 @@ class TournamentController extends Controller
             'status_id' => 'required|max:255'
         ]));
 
-        return new TournamentResource($tournament);
+        return response()->json([
+            'message' => 'Турнир успешно обновлен',
+            'data' => $tournament
+        ], 200);
     }
-    public function update_status(Request $request, $id , Tournament $tournament)
+
+    public function changeTournamentStatus(Request $request, $id, $newStatus)
     {
+        if (!auth()->check()) {
+            return response()->json([
+                'message' => 'Пользователь не авторизован'
+            ], 401);
+        }
+
+
+        if (!auth()->user()->can('update-tournament')) {
+            return response()->json([
+                'message' => 'У вас нет прав на смену статуса турниров'
+            ], 403);
+        }
+
         $tournament = Tournament::find($id);
 
         $tournament->update($request->validate([
             'status_id' => 'required|max:255'
         ]));
 
-        return new TournamentResource($tournament);
+        if (!$tournament) {
+            return response()->json(['message' => 'Турнир не найден'], 404);
+        }
+
+        $tournament->status_id = $newStatus;
+
+        if (!$tournament->save()) {
+            return response()->json(['message' => 'Не удалось сохранить изменения'], 500);
+        }
+
+        return response()->json([
+            'message' => 'Статус турнира изменен успешно',
+            'data' => $tournament
+        ], 200);
     }
+
 
 
     public function destroy(Tournament $tournament)

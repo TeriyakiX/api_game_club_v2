@@ -12,30 +12,13 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', 'AuthController@register');
 Route::middleware('auth:api')->post('logout', [AuthController::class, 'logout']);
 Route::middleware('auth:api')->get('user', [AuthController::class, 'user']);
-
+Route::post('/tournament/{id}/application', 'Api/V1/TournamentController@createApplication')->middleware('auth:api');
+Route::post('/tournament', 'Api/V1/TournamentController@store')->middleware('auth:api');
+Route::put('/tournaments/{id}/status/{newStatus}', 'TournamentController@changeTournamentStatus')->middleware('auth:api');
+Route::get('/tournament/{id}/applications', 'TournamentController@viewApplications')->middleware('auth:api');
 Route::apiResources([
     'news' => NewsController::class,
     'tournaments' => TournamentController::class,
     'application_the_tournament' => Applications_the_tournamentController::class,
 ]);
-
-
-Route::post('/tournaments/{id}/applications', function (Request $request, $id) {
-    $name = $request->input('name');
-    $email = $request->input('email');
-    $phone = $request->input('phone');
-
-    $tournament = \App\Models\Tournament::findOrFail($id);
-
-    $application = new \App\Models\Applications_the_tournament();
-    $application->tournament_id = $id;
-    $application->user_id = auth()->id();
-    $application->name = $name;
-    $application->email = $email;
-    $application->phone = $phone;
-
-    $tournament->applications()->save($application);
-
-    return response()->json(['status' => 'success', 'message' => 'Заявка на участие в турнире была успешно создана']);
-});
 
